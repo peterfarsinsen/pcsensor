@@ -250,7 +250,7 @@ void interrupt_read(usb_dev_handle *dev) {
     }
 }
 
-void interrupt_read_temperatura(usb_dev_handle *dev, float *tempC) {
+void interrupt_read_temperatura(usb_dev_handle *dev, float *tempInC, float *tempOutC) {
 
     int r,i, temperature;
     unsigned char answer[reqIntLen];
@@ -271,7 +271,11 @@ void interrupt_read_temperatura(usb_dev_handle *dev, float *tempC) {
 
     temperature = (answer[3] & 0xFF) + ((signed char)answer[2] << 8);
     temperature += calibration;
-    *tempC = temperature * (125.0 / 32000.0);
+    *tempInC = temperature * (125.0 / 32000.0);
+
+    temperature = (answer[5] & 0xFF) + ((signed char)answer[4] << 8);
+    temperature += calibration;
+    *tempOutC = temperature * (125.0 / 32000.0);
 
 }
 
@@ -309,7 +313,8 @@ void ex_program(int sig) {
 int main( int argc, char **argv) {
 
      usb_dev_handle *lvr_winusb = NULL;
-     float tempc;
+     float tempInC;
+     float tempOutC;
      int c;
      struct tm *local;
      time_t t;
@@ -400,18 +405,18 @@ int main( int argc, char **argv) {
 
      do {
            control_transfer(lvr_winusb, uTemperatura );
-           interrupt_read_temperatura(lvr_winusb, &tempc);
+           interrupt_read_temperatura(lvr_winusb, &tempInC, &tempOutC);
 
            t = time(NULL);
            local = localtime(&t);
 
            if (mrtg) {
               if (formato==2) {
-                  printf("%.2f\n", (9.0 / 5.0 * tempc + 32.0));
-                  printf("%.2f\n", (9.0 / 5.0 * tempc + 32.0));
+                  printf("%.2f\n", (9.0 / 5.0 * tempInC + 32.0));
+                  printf("%.2f\n", (9.0 / 5.0 * tempInC + 32.0));
               } else {
-                  printf("%.2f\n", tempc);
-                  printf("%.2f\n", tempc);
+                  printf("%.2f\n", tempInC);
+                  printf("%.2f\n", tempInC);
               }
 
               printf("%02d:%02d\n",
@@ -420,7 +425,7 @@ int main( int argc, char **argv) {
 
               printf("pcsensor\n");
            } else {
-              printf("%04d/%02d/%02d %02d:%02d:%02d ",
+              printf("%04d/%02d/%02d %02d:%02d:%02d\n",
                           local->tm_year +1900,
                           local->tm_mon + 1,
                           local->tm_mday,
@@ -429,11 +434,14 @@ int main( int argc, char **argv) {
                           local->tm_sec);
 
               if (formato==2) {
-                  printf("Temperature %.2fF\n", (9.0 / 5.0 * tempc + 32.0));
+                  printf("Temperature (internal) %.2fF\n", (9.0 / 5.0 * tempInC + 32.0));
+                  printf("Temperature (external) %.2fF\n", (9.0 / 5.0 * tempOutC + 32.0));
               } else if (formato==1) {
-                  printf("Temperature %.2fC\n", tempc);
+                  printf("Temperature (internal) %.2fC\n", tempInC);
+                  printf("Temperature (external) %.2fC\n", tempOutC);
               } else {
-                  printf("Temperature %.2fF %.2fC\n", (9.0 / 5.0 * tempc + 32.0), tempc);
+                  printf("Temperature (internal) %.2fF %.2fC\n", (9.0 / 5.0 * tempInC + 32.0), tempInC);
+                  printf("Temperature (external) %.2fF %.2fC\n", (9.0 / 5.0 * tempOutC + 32.0), tempOutC);
               }
            }
 
