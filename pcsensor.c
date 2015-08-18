@@ -413,10 +413,10 @@ int main( int argc, char **argv) {
            if (mrtg) {
               if (formato==2) {
                   printf("%.2f\n", (9.0 / 5.0 * tempInC + 32.0));
-                  printf("%.2f\n", (9.0 / 5.0 * tempInC + 32.0));
+                  printf("%.2f\n", (9.0 / 5.0 * tempOutC + 32.0));
               } else {
                   printf("%.2f\n", tempInC);
-                  printf("%.2f\n", tempInC);
+                  printf("%.2f\n", tempOutC);
               }
 
               printf("%02d:%02d\n",
